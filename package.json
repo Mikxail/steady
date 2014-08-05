@@ -1,0 +1,24 @@
+{
+  "name": "steady",
+  "version": "0.1.0",
+  "description": "Simple steady CLI",
+  "main": "index.js",
+  "bin": {
+    "steady": "./bin/steady"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "steady",
+    "forever",
+    "daemon"
+  ],
+  "author": "Mikhail Konovalov",
+  "license": "BSD-2-Clause",
+  "dependencies": {
+    "daemon": "~1.1.0",
+    "flatiron": "~0.3.11",
+    "coffee-script": "*"
+  }
+}
