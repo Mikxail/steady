@@ -47,6 +47,7 @@ class exports.Monitor extends EventEmitter
         w.on 'exit', ->
             console.log "oldWorker exit"
             clearTimeout(timeout)
+        w.disconnect()
 
     listenSignals: () ->
         process.on "SIGHUP", => # Reload worker

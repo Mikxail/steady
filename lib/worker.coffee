@@ -68,29 +68,13 @@ class exports.Worker
         return if @isFinishing
         @isFinishing = true
 
-        # Close servers and wait for all requests to either finish or move to master.
-        wait = 0
-        done = =>
-            if --wait is 0
-                process.disconnect()
-
+        # Close servers
         for server, idx in @servers
-            wait++
             do (server, idx) ->
                 if server.close?
                     console.log "Server #{idx} call close..."
                     server.close ->
                         console.log "Server #{idx} closed."
-                        done()
-                else
-                    setTimeout ->
-                        done()
-                    , 0
-
-        if not @servers?.length
-            process.nextTick ->
-                wait++
-                done()
 
         # Send all active connections to master.
         for id, {conn, saveFn} of @connections
@@ -108,6 +92,8 @@ class exports.Worker
             @restoreQueue.push {handle, connData: msg.connData}
 
     onTermSig: () ->
+        if @isFinishing
+            return process.exit(0)
         # if user do: $pkill -TERM steady
         # we want stop all. Delay for waiting Monitor can send {msg: "finish"}
         setTimeout =>
