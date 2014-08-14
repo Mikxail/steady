@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
 var coffee = require('coffee-script/register');
+if (typeof coffee.register === 'function') {
+	coffee.register();
+}
 var cli = require('../lib/cli');
 cli.run();
