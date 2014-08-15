@@ -18,7 +18,7 @@
   "license": "BSD-2-Clause",
   "dependencies": {
     "daemon": "~1.1.0",
-    "flatiron": "~0.3.11",
-    "coffee-script": "*"
+    "coffee-script": "*",
+    "posix-getopt": "~1.1.0"
   }
 }

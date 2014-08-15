@@ -1,17 +1,16 @@
-flatiron      = require 'flatiron'
 path          = require 'path'
+{Cmd}         = require './cmd'
 steady        = require './steady'
 child_process = require 'child_process'
 net           = require 'net'
 
-
 cli = exports
-app = flatiron.app
+app = new Cmd
 
 help = """
-    usage: steady [action] [options] SCRIPT|PID [script-options]
+    Usage: steady [options] [action] SCRIPT|PID [script-options]
 
-    actions:
+    Actions:
         start                   Start SCRIPT as a daemon
         stop <PID>              Stop the daemon SCRIPT
         stopall                 Stop all running pculster scripts
@@ -22,7 +21,7 @@ help = """
         remworker <PID>         Remove workers from exist master process
         logs <PID>              Exec "tail" command for LOGFILE or ERRFILE(if LOGFILE doen't exist)
 
-    options:
+    Options:
         -d, --daemon            Start as daemon
         -r                      Replace console
         -m MAX, --max           Only run the specified script MAX times
@@ -63,41 +62,11 @@ argvOptions =
     'workers':   {alias: 'w', default: 1}                           # ok
     'replaceConsole': {alias: 'r', boolean: true, default: false}   # ok
 
-app.use flatiron.plugins.cli,
-    argv: argvOptions
-    usage: help
 
+app.opts argvOptions
 
-getCliOptionsStr = (file) ->
-    process.argv.slice process.argv.indexOf(file) + 1
+app.help help
 
-getCliOptions = (file) ->
-    options = {}
-    oldArgv = process.argv.filter(Boolean)
-    if file
-        process.argv.splice process.argv.indexOf(file) + 1
-
-    app.config.stores.argv.store = {};
-    app.config.use('argv', argvOptions);
-
-    Object.keys(argvOptions).forEach (k) ->
-        options[k] = app.config.get k
-
-    process.argv = oldArgv
-    options
-
-getRunOptions = (file) ->
-    options = {}
-    opts = process.argv.slice process.argv.indexOf(file) + 1
-    [path.basename(process.argv[1])].concat(file, opts)
-
-getOptions = (file) ->
-    options = getCliOptions file
-    options.argv = getRunOptions file
-    options.sourceFile = path.resolve process.cwd(), file
-    # options.sourceDir = path.dirname options.sourceFile
-    # options.sourceRunStr = options.argv.join(' ')
-    options
 
 getMasters = (callback) ->
     child = child_process.exec 'ps ax | grep "[s]teady master" | awk \'{print $1}\'', (err, stdout, stderr) ->
@@ -190,9 +159,8 @@ logsByPid = (pid, opts, callback) ->
             child_process.exec command, (err, stdout, stderr) ->
                 callback null, stdout
 
-app.cmd "start (.+)", ->
-    file = app.argv._[1]
-    options = getOptions(file)
+app.cmd "start (.+)", (options, [file], appendOptions) ->
+    sourceFile = path.resolve process.cwd(), file
 
     if options.replaceConsole is true
         steady.replaceConsole()
@@ -201,7 +169,7 @@ app.cmd "start (.+)", ->
         steady.daemon()
 
     opts =
-        argv: options.argv or []
+        argv: appendOptions or []
 
         # sourceFile: options.sourceFile
         # sourceDir: options.sourceDir
@@ -226,21 +194,16 @@ app.cmd "start (.+)", ->
         if opts.stderr is process.stderr
             opts.stderr = 'ignore'
 
-    steady.start options.sourceFile, opts
+    steady.start sourceFile, opts
 
 
-app.cmd "worker (.+)", ->
-    pid = app.argv._[1]
-    options = getCliOptions()
+app.cmd "worker (.+)", (options, [pid]) ->
     for [1..options.workers]
         workerByPid pid, (err) ->
             return console.error err if err?
             console.log "Process '#{pid}' create new workers"
 
-app.cmd "remworker (.+)", ->
-    pid = app.argv._[1]
-    options = getCliOptions()
-
+app.cmd "remworker (.+)", (options, [pid]) ->
     remworkersByPid pid, options.workers, (err) ->
         return console.error err if err?
         console.log "Process '#{pid}' remove workers"
@@ -250,14 +213,12 @@ app.cmd "list", ->
     child = child_process.exec 'ps ax | grep "[s]teady master"', (err, stdout, stderr) ->
         console.log stdout
 
-app.cmd "restart (.+)", ->
-    pid = app.argv._[1]
+app.cmd "restart (.+)", (options, [pid]) ->
     restartByPid pid, (err) ->
         return console.error err if err?
         console.log "Process '#{pid}' restarted"
 
-app.cmd "stop (.+)", ->
-    pid = app.argv._[1]
+app.cmd "stop (.+)", (options, [pid])->
     stopByPid pid, (err) ->
         return console.error err if err?
         console.log "Process '#{pid}' stopped"
@@ -278,18 +239,12 @@ app.cmd "stopall", ->
                 return console.error err if err?
                 console.log "Process '#{pid}' stopped"
 
-app.cmd "logs (.+)", ->
-    pid = app.argv._[1]
-    options = getCliOptionsStr(pid)
-    logsByPid pid, options, (err, data) ->
+app.cmd "logs (.+)", (options, [pid], appendOptions)->
+    logsByPid pid, appendOptions, (err, data) ->
         return console.error err if err?
         console.log data
 
 cli.run = ->
-    # if app.config.get "help"
-    #     return util.puts help
-
     app.start()
 
-# cli.start()
 
