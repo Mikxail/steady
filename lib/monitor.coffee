@@ -44,9 +44,11 @@ class exports.Monitor extends EventEmitter
             return
         w.send {msg: "finish"}
         timeout = setTimeout (-> console.log "Destroying worker."; w.destroy()), @maxDestroyDelay
-        w.on 'exit', ->
+        w.on 'exit', =>
             console.log "oldWorker exit"
+            @worker = undefined
             clearTimeout(timeout)
+            @emit "exit"
         w.disconnect()
 
     listenSignals: () ->
