@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var coffee = require('coffee-script/register');
+var coffee = require('coffee-script');
 if (typeof coffee.register === 'function') {
 	coffee.register();
 }
