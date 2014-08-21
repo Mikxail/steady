@@ -12,11 +12,13 @@ help = """
 
     Actions:
         start                   Start SCRIPT as a daemon
-        stop <PID>              Stop the daemon SCRIPT
-        stopall                 Stop all running pculster scripts
-        restart <PID>           Restart the daemon SCRIPT
-        restartall              Restart all running pculster scripts
-        list                    List all runing pculster scripts
+        stop <PID>              Stop the daemon PID
+        stopall                 Stop all running steady scripts
+        restart <PID>           Restart the daemon PID
+        restartall              Restart all running steady scripts
+        reopen <PID>            Reopen logs for daemon PID
+        reopenall               Reopen logs for all running steady scripts
+        list                    List all runing steady scripts
         worker <PID>            Add more workers to exist master process
         remworker <PID>         Remove workers from exist master process
         logs <PID>              Exec "tail" command for LOGFILE or ERRFILE(if LOGFILE doen't exist)
@@ -106,6 +108,15 @@ restartByPid = (pid, callback) ->
             return callback "Can't fount steady process with pid '#{pid}'"
 
         sendSignal pid, "HUP", (err) ->
+            callback err
+
+reopenByPid = (pid, callback) ->
+    getMasters (err, pids) ->
+        return callback err if err?
+        if pids.indexOf(pid) is -1
+            return callback "Can't fount steady process with pid '#{pid}'"
+
+        sendSignal pid, "USR2", (err) ->
             callback err
 
 stopByPid = (pid, callback) ->
@@ -243,6 +254,19 @@ app.cmd "logs (.+)", (options, [pid], appendOptions)->
     logsByPid pid, appendOptions, (err, data) ->
         return console.error err if err?
         console.log data
+
+app.cmd "reopen (.+)", (options, [pid], appendOptions) ->
+    reopenByPid pid, (err) ->
+        return console.error err if err?
+        console.log "Process '#{pid}' logs reopened"
+
+app.cmd "reopenall", ->
+    getMasters (err, pids) ->
+        return console.error err if err?
+        for pid in pids then do (pid) ->
+            reopenByPid pid, (err) ->
+                return console.error err if err?
+                console.log "Process '#{pid}' logs reopened"
 
 cli.run = ->
     app.start()
