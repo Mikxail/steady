@@ -169,7 +169,7 @@ app.cmd "start (.+)", (options, [file], appendOptions) ->
         steady.daemon()
 
     opts =
-        argv: appendOptions or []
+        argv: [path.basename(process.argv[1])].concat(file, (appendOptions or []))
 
         # sourceFile: options.sourceFile
         # sourceDir: options.sourceDir
