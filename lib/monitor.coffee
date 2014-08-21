@@ -6,7 +6,6 @@ class exports.Monitor extends EventEmitter
     constructor: (@options = {}) ->
         @defaultOut = @options.stdout or process.stdout
         @defaultErr = @options.stderr or process.stderr
-        @reopenStdio()
 
         @restartAttempts = 0
         @maxRestartAttempts = options.maxRestartAttempts or 5
@@ -21,6 +20,7 @@ class exports.Monitor extends EventEmitter
         @listenSignals()
 
         @startNewWorker()
+        @reopenStdio()
 
     startNewWorker: () ->
         @forkTime = Date.now()
