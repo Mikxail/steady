@@ -38,7 +38,7 @@ class exports.Monitor extends EventEmitter
         return if not w?
         console.log "Stop oldWorker"
         w.suicide = true
-        if not w.state in ['online', 'listening']
+        if w.state not in ['online', 'listening']
             console.log "oldWorker has state '#{w.state}'. Destroy it."
             w.destroy()
             return
@@ -116,6 +116,7 @@ class exports.Monitor extends EventEmitter
         workTime = Date.now() - @forkTime
         if workTime < @minWorkTime
             if ++@restartAttempts >= @maxRestartAttempts
+                console.error "max restartAttempts: '#{@restartAttempts}' of '#{maxRestartAttempts}'. do exit"
                 process.exit() # Worker cannot start after several attempts. Master dies.
         else
             restartAttempts = 0
