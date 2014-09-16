@@ -36,22 +36,22 @@ class exports.Monitor extends EventEmitter
 
     stopWorker: (w = @worker) ->
         return if not w?
-        console.log "Stop oldWorker"
+        console.error Date(), "Stop oldWorker"
         w.suicide = true
         if w.state not in ['online', 'listening']
-            console.log "oldWorker has state '#{w.state}'. Destroy it."
+            console.error Date(), "oldWorker has state '#{w.state}'. Destroy it."
             w.destroy()
             return
         w.send {msg: "finish"}
         timeout = setTimeout ->
-            console.log "Destroying worker."
+            console.error Date(), "Destroying worker."
             if not w.kill? # node 0.8
                 w.process?.kill? 'SIGKILL'
             else # node v 0.10
                 w.destroy? 'SIGKILL'
         , @maxDestroyDelay
         w.on 'exit', =>
-            console.log "oldWorker exit"
+            console.error Date(), "oldWorker exit"
             @worker = undefined
             clearTimeout(timeout)
             @emit "exit"
@@ -96,7 +96,7 @@ class exports.Monitor extends EventEmitter
 
 
     onReadyMsg: () ->
-        console.log "Ready msg"
+        console.error Date(), "Ready msg"
         clearTimeout @startTimeout if @startTimeout?
         return unless @oldWorker
         @stopWorker(@oldWorker)
@@ -122,18 +122,18 @@ class exports.Monitor extends EventEmitter
         workTime = Date.now() - @forkTime
         if workTime < @minWorkTime
             if ++@restartAttempts >= @maxRestartAttempts
-                console.error "max restartAttempts: '#{@restartAttempts}' of '#{maxRestartAttempts}'. do exit"
+                console.error Date(), "max restartAttempts: '#{@restartAttempts}' of '#{maxRestartAttempts}'. do exit"
                 process.exit() # Worker cannot start after several attempts. Master dies.
         else
             restartAttempts = 0
 
-        console.log "Worker crashed. Restarting..."
+        console.error Date(), "Worker crashed. Restarting..."
         setTimeout =>
             @startNewWorker()
         , restartAttempts*restartAttempts * 100
 
     onStartTimeout: ->
-        console.log "Worker can't starting. Destroying worker."
+        console.error Date(), "Worker can't starting. Destroying worker."
         @worker.destroy()
         return if not @oldWorker?
         @worker = @oldWorker

@@ -65,6 +65,7 @@ class exports.Worker
                     @reopenStdio()
 
     onFinishMsg: (msg, handle) ->
+        console.error Date(), "Worker got finish"
         return if @isFinishing
         @isFinishing = true
 
@@ -72,9 +73,9 @@ class exports.Worker
         for server, idx in @servers
             do (server, idx) ->
                 if server.close?
-                    console.log "Server #{idx} call close..."
+                    console.error Date(), "Server #{idx} call close..."
                     server.close ->
-                        console.log "Server #{idx} closed."
+                        console.error Date(), "Server #{idx} closed."
 
         # Send all active connections to master.
         for id, {conn, saveFn} of @connections
@@ -85,13 +86,14 @@ class exports.Worker
 
 
     onConnMsg: (msg, handle) ->
-        console.log "Worker conn"
+        console.error Date(), "Worker conn"
         if @restoreFn?
             @restoreFn(handle, msg.connData)
         else
             @restoreQueue.push {handle, connData: msg.connData}
 
     onTermSig: () ->
+        console.error Date(), "Worker got term"
         if @isFinishing
             return process.exit(0)
         # if user do: $pkill -TERM steady
