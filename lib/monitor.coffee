@@ -43,7 +43,13 @@ class exports.Monitor extends EventEmitter
             w.destroy()
             return
         w.send {msg: "finish"}
-        timeout = setTimeout (-> console.log "Destroying worker."; w.destroy()), @maxDestroyDelay
+        timeout = setTimeout ->
+            console.log "Destroying worker."
+            if not w.kill? # node 0.8
+                w.process?.kill? 'SIGKILL'
+            else # node v 0.10
+                w.destroy? 'SIGKILL'
+        , @maxDestroyDelay
         w.on 'exit', =>
             console.log "oldWorker exit"
             @worker = undefined
