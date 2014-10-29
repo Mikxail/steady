@@ -52,7 +52,6 @@ class exports.Monitor extends EventEmitter
         , @maxDestroyDelay
         w.on 'exit', =>
             console.error Date(), "oldWorker exit"
-            @worker = undefined
             clearTimeout(timeout)
             @emit "exit"
         w.disconnect()
