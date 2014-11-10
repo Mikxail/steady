@@ -187,6 +187,7 @@ steady._onMonitorConnMsg = (script, msg, handle) ->
     return if not monitors?.length
     monitors = monitors.filter (m) -> not m.monitor.worker.suicide
     randMonitor = monitors[Math.floor(Math.random()*monitors.length)].monitor
+    return if not randMonitor
     randMonitor.emit "conn", msg, handle
     randMonitor
 

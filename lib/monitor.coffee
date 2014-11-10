@@ -34,7 +34,7 @@ class exports.Monitor extends EventEmitter
     reloadWorker: () ->
         @startNewWorker()
 
-    stopWorker: (w = @worker) ->
+    stopWorker: (w = @worker, isExit = false) ->
         return if not w?
         console.error Date(), "Stop oldWorker"
         w.suicide = true
@@ -42,7 +42,7 @@ class exports.Monitor extends EventEmitter
             console.error Date(), "oldWorker has state '#{w.state}'. Destroy it."
             w.destroy()
             return
-        w.send {msg: "finish"}
+        w.send {msg: "finish", exit: isExit}
         timeout = setTimeout ->
             console.error Date(), "Destroying worker."
             if not w.kill? # node 0.8
@@ -61,7 +61,7 @@ class exports.Monitor extends EventEmitter
             @startNewWorker()
 
         process.on "SIGTERM", => # Stop worker (soft stop)
-            @stopWorker @worker
+            @stopWorker @worker, true
 
         process.on "SIGUSR2", => # Reopen logs
             @reopenStdio()

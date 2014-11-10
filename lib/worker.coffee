@@ -47,8 +47,7 @@ class exports.Worker
     listenSignals: () ->
         process.on "SIGHUP", -> # Ignore signal.
         process.on "SIGUSR2", -> # Ignore signal
-        process.on "SIGTERM", => # soft stop(grab all connections and send to master)
-            @onTermSig()
+        process.on "SIGTERM", -> # Ignore signal
         process.on "SIGPIPE", -> # Ignore signal
 
 
@@ -79,9 +78,10 @@ class exports.Worker
 
         # Send all active connections to master.
         for id, {conn, saveFn} of @connections
-            connData = saveFn()
-            # console.log "Sending conn", connData
-            process.send {msg: "conn", connData}, conn, {track: true}
+            if not msg.exit # don't call save function if master want exit
+                connData = saveFn()
+                # console.log "Sending conn", connData
+                process.send {msg: "conn", connData}, conn, {track: true}
             conn.destroy()
 
 
